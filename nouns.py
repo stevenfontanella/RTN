@@ -6,11 +6,14 @@ class RTN:
 			self.start=Node()
 		else:
 			self.start=start
-			
+
 		if end is None:
 			self.end=None
 		else:
 			self.end=end
+
+	def connect(self,RTN):
+		self.end.connect(RTN.start)
 
 	def eval(self):
 		string=""
@@ -24,13 +27,15 @@ class RTN:
 		return string
 
 class Node:
-	#name is mostly for debugging
+	#name is mostly for debugging, might change to dict later
 	def __init__(self,words=None,name="Node"):
 		self.connections=[]
 		self.words=words
 		self.name=name
+		self.start=self
+		self.end=self
 	def connect(self,RTN): #one sided connection; self -> node
-		self.connections.append(RTN)
+		self.end.connections.append(RTN.start)
 
 	#choose a neighboring node randomly
 	def next(self):
@@ -46,18 +51,21 @@ class Node:
 		return self.name
 
 #ornate noun generator
-def OrnateNoun(nouns=None,adjectives=None,articles=None):
+def ornateNoun(nouns=None,adjectives=None,articles=None):
 	if nouns is None:
 		with open("words/nouns.txt") as nounsList:
-			noun=Node(list(map(str.strip,nounsList)),"noun")
+			nouns=list(map(str.strip,nounsList))
 	if adjectives is None:
 		with open("words/adjectives.adj") as adjList:
-			adjective=Node(list(map(str.strip,adjList)),"adj")
+			adjectives=list(map(str.strip,adjList))
 	if articles is None:
-		article=Node(["a","an","the"],"article")
+		articles=["a","an","the"]
 
 	begin=Node([""],"begin")
 	end=Node([""],"end")
+	noun=Node(nouns,"noun")
+	adjective=Node(adjectives,"adjective")
+	article=Node(articles,"article")
 	#structure of an Ornate Noun from Douglas Hofstadter's book, "Godel, Escher, Bach"
 	begin.connect(article)
 	begin.connect(adjective)
@@ -73,12 +81,31 @@ def OrnateNoun(nouns=None,adjectives=None,articles=None):
 
 	rtn=RTN(begin)
 
-	while(True):
-		yield rtn.eval()
+	return rtn
+
+#May need to implement some sort of 'lazy evaluation' where the recursion is only evaluated when
+#the recurring node is reached, otherwise it seems an infinite loop would occur
+def FancyNouns(nouns=None,adjectives=None,articles=None,pronouns=None,prepositions=None):
+	ornate=ornateNoun()
+	if pronouns is None:
+		pronouns=["that","which","whom","who","whoever","whomever","whichever"]
+	if prepositions is None:
+		with open("words/prepositions.txt") as prepList:
+			prepositions=list(map(str.strip,prepList))
+	if nouns is None:
+		with open("words/nouns.txt") as nounsList:
+			noun=Node(list(map(str.strip,nounsList)),"noun")
+	if adjectives is None:
+		with open("words/adjectives.adj") as adjList:
+			adjective=Node(list(map(str.strip,adjList)),"adj")
+	if articles is None:
+		article=Node(["a","an","the"],"article")
+
+	relativePronouns=Node(pronouns,"relative pronouns")
 
 if __name__=="__main__":
 
-	ornatenouns=OrnateNoun()
+	ornatenouns=ornateNoun()
 
 	for i in range(100):
-		print(next(ornatenouns))
+		print(ornatenouns.eval())
